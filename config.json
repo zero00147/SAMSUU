@@ -1,0 +1,14 @@
+{
+  "model_path": "models/Qwen3-4B-Q4_K_M.gguf",
+  "llama_host": "127.0.0.1",
+  "llama_port": 8080,
+  "app_host": "127.0.0.1",
+  "app_port": 8000,
+  "n_ctx": 8192,
+  "temperature": 0.7,
+  "top_p": 0.8,
+  "top_k": 20,
+  "max_tokens": 2048,
+  "enable_thinking": false,
+  "system_prompt": "You are a helpful, thoughtful assistant. Answer clearly and concisely. Use markdown for structure and fenced code blocks with a language tag for code. Write mathematics in plain text with Unicode symbols (e.g. 60 mph × 1 hour = 60 miles). Never use LaTeX, dollar-sign math delimiters, or commands like \\text{} and \\frac{}."
+}

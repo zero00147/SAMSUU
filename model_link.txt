@@ -1,0 +1,13 @@
+# Source model (as provided)
+https://huggingface.co/Qwen/Qwen3-4B
+
+# NOTE: the repo above is BF16 safetensors (~8 GB) and will NOT fit in 8 GB RAM.
+# The artifact this project actually downloads and runs is the official GGUF build
+# of the same model:
+#
+#   repo: Qwen/Qwen3-4B-GGUF
+#   file: Qwen3-4B-Q4_K_M.gguf   (2.5 GB)
+#   url:  https://huggingface.co/Qwen/Qwen3-4B-GGUF/blob/main/Qwen3-4B-Q4_K_M.gguf
+#
+# Download command:
+#   hf download Qwen/Qwen3-4B-GGUF Qwen3-4B-Q4_K_M.gguf --local-dir ./models

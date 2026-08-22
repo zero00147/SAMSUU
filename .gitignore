@@ -1,0 +1,8 @@
+models/
+data/
+.venv/
+__pycache__/
+*.pyc
+*.db
+*.log
+.DS_Store
