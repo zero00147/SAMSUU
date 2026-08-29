@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+# samsu launcher — one entry point for the CLI, the web UI, and the model server.
+#
+#   ./samsu              start the CLI (starts the model server if needed)
+#   ./samsu web          start the web UI at http://127.0.0.1:8000
+#   ./samsu serve        start only the model server, in the background
+#   ./samsu game         serve apps/asteroids at http://127.0.0.1:8100
+#   ./samsu status       show what is running
+#   ./samsu doctor       recommend a context size for this machine
+#   ./samsu stop         stop the model server (and the web UI)
+#
+set -euo pipefail
+cd "$(dirname "$0")"
+
+PY=./.venv/bin/python
+cfg() { $PY -c "import json;print(json.load(open('config.json'))['$1'])"; }
+
+MODEL=$(cfg model_path)
+N_CTX=$(cfg n_ctx)
+LLAMA_PORT=$(cfg llama_port)
+APP_PORT=$(cfg app_port)
+
+llama_pid() { pgrep -f "llama-server -m $MODEL" 2>/dev/null || true; }
+web_pid()   { pgrep -f "uvicorn server.main:app" 2>/dev/null || true; }
+llama_up()  { curl -sf "http://127.0.0.1:$LLAMA_PORT/health" >/dev/null 2>&1; }
+
+start_llama() {
+  if llama_up; then return 0; fi
+  if [ ! -f "$MODEL" ]; then
+    echo "Model not found: $MODEL" >&2
+    echo "  ./.venv/bin/huggingface-cli download Qwen/Qwen3-4B-GGUF Qwen3-4B-Q4_K_M.gguf --local-dir ./models" >&2
+    exit 1
+  fi
+  echo "→ starting model server on :$LLAMA_PORT (ctx $N_CTX)…"
+  # -ngl 99: all layers on the M3 GPU. -fa on: flash attention, required for the
+  # quantised KV cache. --jinja: enables Qwen3's tool-call and reasoning templates.
+  nohup llama-server \
+    -m "$MODEL" --host 127.0.0.1 --port "$LLAMA_PORT" \
+    -c "$N_CTX" -ngl 99 -fa on \
+    --cache-type-k q8_0 --cache-type-v q8_0 \
+    --jinja --reasoning-format deepseek \
+    > llama-server.log 2>&1 &
+  for _ in $(seq 1 180); do
+    llama_up && { echo "✓ model ready"; return 0; }
+    sleep 1
+  done
+  echo "Model server failed to start — see llama-server.log" >&2
+  exit 1
+}
+
+# Bare flags (./samsu --dir X) mean "run the CLI with these options", not a subcommand.
+CMD="${1:-cli}"
+case "$CMD" in
+  -h|--help|help) ;;
+  -*) CMD="cli" ;;
+  *) shift || true ;;
+esac
+
+case "$CMD" in
+  cli)
+    start_llama
+    exec $PY -m server.cli "$@"
+    ;;
+
+  web)
+    start_llama
+    echo "→ web UI on http://127.0.0.1:$APP_PORT   (Ctrl-C stops the web UI only)"
+    exec ./.venv/bin/uvicorn server.main:app --host 127.0.0.1 --port "$APP_PORT"
+    ;;
+
+  serve)
+    start_llama
+    echo "Model server running in the background. Stop it with: ./samsu stop"
+    ;;
+
+  game)
+    # Static files only — but it must be served over http, because ES modules and the
+    # import map both fail under file:// . No model server needed.
+    GAME_PORT="${GAME_PORT:-8100}"
+    echo "→ Void Runner on http://127.0.0.1:$GAME_PORT   (Ctrl-C to stop)"
+    exec $PY -m http.server "$GAME_PORT" --bind 127.0.0.1 -d apps/asteroids
+    ;;
+
+  status)
+    if llama_up; then
+      echo "model server : running  (pid $(llama_pid | tr '\n' ' '), port $LLAMA_PORT, ctx $N_CTX)"
+    else
+      echo "model server : stopped"
+    fi
+    if [ -n "$(web_pid)" ]; then
+      echo "web UI       : running  (pid $(web_pid | tr '\n' ' '), http://127.0.0.1:$APP_PORT)"
+    else
+      echo "web UI       : stopped"
+    fi
+    ;;
+
+  stop)
+    stopped=0
+    if [ -n "$(web_pid)" ]; then kill $(web_pid) 2>/dev/null && echo "stopped web UI"; stopped=1; fi
+    if [ -n "$(llama_pid)" ]; then kill $(llama_pid) 2>/dev/null && echo "stopped model server"; stopped=1; fi
+    [ "$stopped" = 0 ] && echo "nothing was running"
+    exit 0
+    ;;
+
+  doctor)
+    # Recommend a context size from the Metal working-set ceiling and free RAM.
+    # KV cost is ~75 KB/token at q8_0 (measured on Qwen3-4B: 36 layers, 8 KV heads).
+    $PY - "$MODEL" "$N_CTX" <<'PYEOF'
+import subprocess, sys, os, json
+model, n_ctx = sys.argv[1], int(sys.argv[2])
+
+def metal_limit_gb():
+    try:
+        out = subprocess.run(["/usr/bin/swift", "-e",
+            'import Metal\nif let d = MTLCreateSystemDefaultDevice() '
+            '{ print(d.recommendedMaxWorkingSetSize) }'],
+            capture_output=True, text=True, timeout=120)
+        return int(out.stdout.strip()) / 1073741824
+    except Exception:
+        return None
+
+weights = os.path.getsize(model) / 1073741824 if os.path.exists(model) else 2.3
+limit = metal_limit_gb()
+KV_PER_TOKEN = 75 * 1024          # q8_0, measured
+COMPUTE = 0.45                    # compute buffers, GB, approximate
+
+vm = subprocess.run(["sysctl", "-n", "vm.swapusage"], capture_output=True, text=True).stdout
+swap_used = float(vm.split("used =")[1].split("M")[0]) / 1024 if "used =" in vm else 0
+
+print(f"\n  Apple Silicon GPU ceiling : {limit:.2f} GB" if limit else "\n  GPU ceiling: unknown")
+print(f"  model weights            : {weights:.2f} GB")
+print(f"  compute buffers (approx) : {COMPUTE:.2f} GB")
+print(f"  swap in use              : {swap_used:.1f} GB"
+      + ("   <- system is under memory pressure" if swap_used > 2 else ""))
+
+if limit:
+    free_for_kv = limit - weights - COMPUTE
+    max_tok = int(free_for_kv * 1073741824 / KV_PER_TOKEN)
+    safe = max(2048, int(max_tok * 0.6) // 1024 * 1024)   # 40% headroom
+    print(f"\n  room for KV cache        : {free_for_kv:.2f} GB")
+    print(f"  absolute max context     : ~{max_tok:,} tokens (at the ceiling; expect slowdown)")
+    print(f"  recommended n_ctx        : {safe:,} tokens")
+    if swap_used > 4:
+        print("\n  NOTE: heavy swap use detected. Close memory-hungry apps (VMs especially)")
+        print("        before raising n_ctx, or throughput will drop sharply.")
+    print(f"\n  currently configured     : {n_ctx:,}")
+    if n_ctx > safe:
+        print("  -> above the recommendation; lower n_ctx in config.json if it feels slow")
+    else:
+        print("  -> within budget")
+print("\n  Change it in config.json (\"n_ctx\"), then: ./samsu stop && ./samsu serve\n")
+PYEOF
+    ;;
+
+  -h|--help|help)
+    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+    ;;
+
+  *)
+    echo "unknown command: $1  (try: ./samsu help)" >&2
+    exit 1
+    ;;
+esac

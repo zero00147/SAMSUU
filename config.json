@@ -8,7 +8,10 @@
   "temperature": 0.7,
   "top_p": 0.8,
   "top_k": 20,
-  "max_tokens": 2048,
+  "max_tokens": 3072,
   "enable_thinking": false,
+  "auto_approve": true,
+  "max_tool_rounds": 40,
+  "cli_max_tokens": 3072,
   "system_prompt": "You are a helpful, thoughtful assistant. Answer clearly and concisely. Use markdown for structure and fenced code blocks with a language tag for code. Write mathematics in plain text with Unicode symbols (e.g. 60 mph × 1 hour = 60 miles). Never use LaTeX, dollar-sign math delimiters, or commands like \\text{} and \\frac{}."
 }

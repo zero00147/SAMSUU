@@ -72,6 +72,60 @@ svg rect { fill: currentColor; stroke: none; }
 .floating-toggle { position: absolute; top: 12px; left: 12px; z-index: 5; display: none; }
 .app.collapsed .floating-toggle { display: inline-flex; }
 
+/* ---------- top-right activity indicator ---------- */
+
+.status-pill {
+  position: absolute;
+  top: 14px; right: 18px;
+  z-index: 6;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 13px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  animation: pill-in .18s ease;
+}
+.status-pill[hidden] { display: none; }
+
+@keyframes pill-in { from { opacity: 0; transform: translateY(-4px); } }
+
+.status-label { font-weight: 500; color: var(--text); }
+.status-elapsed { font-variant-numeric: tabular-nums; color: var(--text-faint); }
+
+.status-spinner {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* terminal states: swap the spinner for a static dot */
+.status-pill[data-state="done"]    .status-spinner,
+.status-pill[data-state="stopped"] .status-spinner,
+.status-pill[data-state="failed"]  .status-spinner {
+  animation: none;
+  border: 0;
+  width: 7px; height: 7px;
+  margin: 0 2px;
+}
+.status-pill[data-state="done"]    .status-spinner { background: #4C9A6A; }
+.status-pill[data-state="stopped"] .status-spinner { background: var(--text-faint); }
+.status-pill[data-state="failed"]  .status-spinner { background: #C4553D; }
+
+@media (prefers-reduced-motion: reduce) {
+  .status-spinner { animation: none; }
+  .status-pill { animation: none; }
+}
+
+@media (max-width: 720px) {
+  .status-pill { top: 10px; right: 10px; padding: 5px 10px; font-size: 11.5px; }
+}
+
 .new-chat {
   margin: 4px 12px 12px;
   padding: 9px 12px;
@@ -182,6 +236,47 @@ svg rect { fill: currentColor; stroke: none; }
 
 .msg.assistant .body { word-wrap: break-word; }
 
+/* ---------- generation phase colours ----------
+   A reply changes colour as it moves through waiting → reasoning → writing, then
+   drops back to the plain page background once it has settled. The point is that
+   "still thinking" never looks like "this is the finished answer". */
+
+.msg.assistant.live {
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-left: -16px;
+  margin-right: -16px;
+  transition: background .25s ease, box-shadow .25s ease;
+}
+
+/* waiting on the first token — neutral, so an empty box is not alarming */
+.msg.assistant.live[data-phase="waiting"] {
+  background: #F7F6F3;
+  box-shadow: inset 2px 0 0 var(--border);
+}
+/* reasoning — amber, matching the "Thinking" block inside it */
+.msg.assistant.live[data-phase="reasoning"] {
+  background: #FDF7F0;
+  box-shadow: inset 2px 0 0 #D8A15E;
+}
+/* writing the answer — accent */
+.msg.assistant.live[data-phase="writing"] {
+  background: #FDF5F2;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* Held briefly after the stream ends, so the finish is visible. */
+.msg.assistant[data-settled] {
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-left: -16px;
+  margin-right: -16px;
+  transition: background 1.2s ease, box-shadow 1.2s ease;
+}
+.msg.assistant[data-settled="done"]    { box-shadow: inset 2px 0 0 #4C9A6A; background: #F5FAF6; }
+.msg.assistant[data-settled="stopped"] { box-shadow: inset 2px 0 0 var(--text-faint); background: #F7F6F3; }
+.msg.assistant[data-settled="failed"]  { box-shadow: inset 2px 0 0 #C4553D; background: #FCF4F1; }
+
 /* thinking block */
 details.thinking {
   border-left: 2px solid var(--border);
@@ -189,6 +284,7 @@ details.thinking {
   margin: 0 0 14px;
   color: var(--text-dim);
   font-size: 14px;
+  transition: border-color .25s ease, color .25s ease;
 }
 details.thinking summary {
   cursor: pointer;
@@ -197,11 +293,39 @@ details.thinking summary {
   font-size: 13px;
   user-select: none;
   padding: 2px 0;
+  font-variant-numeric: tabular-nums;
 }
 details.thinking summary::-webkit-details-marker { display: none; }
 details.thinking summary::before { content: "▸ "; }
 details.thinking[open] summary::before { content: "▾ "; }
 details.thinking .thinking-body { white-space: pre-wrap; font-style: italic; padding: 4px 0 6px; }
+
+/* actively reasoning — amber and pulsing, so it reads as in-progress */
+details.thinking.live { border-left-color: #D8A15E; color: #7A5B33; }
+details.thinking.live summary { color: #A9743A; font-weight: 500; animation: think-pulse 1.5s ease-in-out infinite; }
+@keyframes think-pulse { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) {
+  details.thinking.live summary { animation: none; }
+}
+
+/* assistant row that carried no answer text at all */
+.empty-reply {
+  margin-top: 4px;
+  border-left: 2px solid #D8A15E;
+  padding: 2px 0 2px 12px;
+  color: var(--text-dim);
+  font-size: 13.5px;
+}
+
+/* per-message generation stats */
+.msg-stats {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.msg-stats .sep { opacity: .5; margin: 0 5px; }
+.msg-stats .stopped-flag { color: #B06A4F; }
 
 /* actions under a message */
 .actions { display: flex; gap: 2px; margin-top: 6px; opacity: 0; transition: opacity .12s; }
@@ -279,15 +403,22 @@ details.thinking .thinking-body { white-space: pre-wrap; font-style: italic; pad
 .code-block pre code {
   background: none; border: 0; padding: 0; font-size: 13px; line-height: 1.6;
 }
-.code-copy {
+/* Copy / Download sit over the top-right of the block. Download stays faintly
+   visible even without hover — on a touch screen there is no hover to reveal it. */
+.code-tools {
   position: absolute; top: 8px; right: 8px;
+  display: flex; gap: 6px;
+}
+.code-btn {
   background: var(--bg); border: 1px solid var(--border);
   border-radius: 6px; padding: 3px 8px;
   font: inherit; font-size: 11.5px; color: var(--text-dim);
-  cursor: pointer; opacity: 0; transition: opacity .12s;
+  cursor: pointer; opacity: .35; transition: opacity .12s, color .12s;
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.code-block:hover .code-copy { opacity: 1; }
-.code-copy:hover { color: var(--text); }
+.code-block:hover .code-btn { opacity: 1; }
+.code-btn:focus-visible { opacity: 1; }
+.code-btn:hover { color: var(--text); border-color: var(--accent); }
 
 .body table {
   border-collapse: collapse; width: 100%; margin: 0 0 1em; font-size: .93em;
@@ -325,6 +456,140 @@ details.thinking .thinking-body { white-space: pre-wrap; font-style: italic; pad
   padding: 4px 0;
 }
 .composer textarea::placeholder { color: var(--text-faint); }
+
+/* ---------- attachments ---------- */
+
+.attach-btn {
+  flex: 0 0 auto;
+  width: 30px; height: 32px;
+  margin-left: -6px;
+  background: none; border: 0; cursor: pointer;
+  color: var(--text-faint);
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+}
+.attach-btn:hover { color: var(--text); background: var(--hover); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.chips:empty { display: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  max-width: 300px;
+  padding: 4px 6px 4px 10px;
+  background: #FBEFE9;
+  border: 1px solid #EBC3B2;
+  border-radius: 14px;
+  font-size: 12px;
+  color: var(--accent-hover);
+}
+.chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-tok {
+  font-variant-numeric: tabular-nums;
+  opacity: .7;
+  padding-left: 6px;
+  border-left: 1px solid #EBC3B2;
+}
+.chip button {
+  background: none; border: 0; cursor: pointer;
+  color: inherit; opacity: .6;
+  font-size: 15px; line-height: 1; padding: 0 3px;
+}
+.chip button:hover { opacity: 1; }
+
+.disclaimer .over, .budget.over { color: #B03A22; }
+
+/* ---------- documents panel ---------- */
+
+.overlay {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(30,28,25,.28);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.overlay[hidden] { display: none; }
+
+.docs-panel {
+  background: var(--bg);
+  border-radius: 16px;
+  width: min(620px, 100%);
+  max-height: min(680px, 88vh);
+  display: flex; flex-direction: column;
+  box-shadow: 0 18px 50px rgba(0,0,0,.22);
+  overflow: hidden;
+}
+
+.docs-head, .docs-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+}
+.docs-head { border-bottom: 1px solid var(--border); }
+.docs-foot { border-top: 1px solid var(--border); gap: 12px; }
+
+.docs-body { overflow-y: auto; padding: 16px 18px; flex: 1; }
+
+.upload-zone {
+  display: block; text-align: center; cursor: pointer;
+  padding: 20px 16px;
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-dim);
+  font-size: 13.5px;
+  margin-bottom: 16px;
+}
+.upload-zone:hover, .upload-zone.drag {
+  border-color: var(--accent);
+  background: #FDF7F4;
+  color: var(--accent-hover);
+}
+
+.docs-empty { color: var(--text-faint); font-size: 13px; padding: 10px 2px; }
+
+.doc { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; }
+
+.doc-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+.doc-head:hover { background: var(--hover); }
+.doc.open .doc-head { border-bottom: 1px solid var(--border); }
+.doc-name { font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-meta { color: var(--text-faint); font-size: 12px; white-space: nowrap; }
+.doc-del {
+  background: none; border: 0; cursor: pointer; color: var(--text-faint);
+  padding: 3px; border-radius: 5px; display: inline-flex;
+}
+.doc-del:hover { color: #C4553D; background: rgba(0,0,0,.05); }
+
+.doc-sections { display: none; max-height: 300px; overflow-y: auto; }
+.doc.open .doc-sections { display: block; }
+
+.section-row {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 12px 6px 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.section-row:hover { background: var(--hover); }
+.section-row.too-big { opacity: .45; cursor: not-allowed; }
+.section-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.section-tok {
+  color: var(--text-faint); font-size: 11.5px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.section-row input { accent-color: var(--accent); margin: 0; }
+
+.budget { font-size: 12.5px; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+/* attachment summary on a stored user turn */
+.attach-note {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  text-align: right;
+}
 
 .think-toggle {
   flex: 0 0 auto;

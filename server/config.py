@@ -17,6 +17,14 @@ _DEFAULTS = {
     "top_k": 20,
     "max_tokens": 2048,
     "enable_thinking": False,
+    # CLI: run file operations without confirming. Confinement to the chosen
+    # workspace still applies — this only removes the y/N prompt inside it.
+    "auto_approve": True,
+    "max_tool_rounds": 40,
+    # The CLI needs a bigger output budget than chat: a write_file call has to emit the
+    # whole file inside a JSON string, and running out mid-string produces unparseable
+    # arguments that llama-server rejects with a 500.
+    "cli_max_tokens": 3072,
     "system_prompt": "You are a helpful, thoughtful assistant.",
 }
 

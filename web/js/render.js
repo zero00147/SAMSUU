@@ -48,7 +48,71 @@ function renderMarkdown(text) {
   return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } });
 }
 
-/* Wrap each <pre> in a container with a copy button. */
+/* ---- code block download ------------------------------------------------
+   The web UI has no filesystem access (file tools are CLI-only), so a generated
+   file arrives as a fenced block. These helpers turn that block back into a real
+   file the browser can save, guessing a sensible name rather than "download.txt". */
+
+const CODE_EXT = {
+  sql: 'sql', python: 'py', py: 'py', javascript: 'js', js: 'js', jsx: 'jsx',
+  typescript: 'ts', ts: 'ts', tsx: 'tsx', json: 'json', yaml: 'yml', yml: 'yml',
+  html: 'html', css: 'css', scss: 'scss', bash: 'sh', sh: 'sh', shell: 'sh',
+  zsh: 'sh', markdown: 'md', md: 'md', c: 'c', h: 'h', cpp: 'cpp', java: 'java',
+  go: 'go', rust: 'rs', rs: 'rs', ruby: 'rb', php: 'php', swift: 'swift',
+  kotlin: 'kt', toml: 'toml', ini: 'ini', xml: 'xml', csv: 'csv', diff: 'diff',
+  text: 'txt', plaintext: 'txt',
+};
+
+// A filename must contain a letter and end in a short extension, so "1.2s" and
+// "e.g" in surrounding prose are not mistaken for one.
+const FILENAME_RE = /\b([A-Za-z0-9_-]*[A-Za-z][A-Za-z0-9_-]*\.[A-Za-z0-9]{1,8})\b/;
+
+/* Language tag marked put on the <code> element, e.g. "language-sql". */
+function blockLang(pre) {
+  const code = pre.querySelector('code');
+  const cls = (code && code.className) || '';
+  const m = cls.match(/language-([\w+-]+)/);
+  return m ? m[1].toLowerCase() : '';
+}
+
+/* Models label a generated file either in a comment on the first lines
+   ("-- schema.sql") or in the sentence just above the fence. Try both, and only
+   accept a name whose extension agrees with the fence language — otherwise a
+   passing mention of README.md would rename an SQL file. */
+function guessFilename(pre, wrap) {
+  const lang = blockLang(pre);
+  const ext = CODE_EXT[lang] || 'txt';
+
+  const heads = pre.innerText.split('\n').slice(0, 3)
+    .filter((l) => /^\s*(--|#|\/\/|\/\*|<!--|;)/.test(l));
+  const prev = wrap.previousElementSibling;
+  const sources = [...heads, prev ? prev.textContent.slice(-160) : ''];
+
+  for (const text of sources) {
+    const m = text.match(FILENAME_RE);
+    if (!m) continue;
+    const name = m[1];
+    const found = name.split('.').pop().toLowerCase();
+    if (!CODE_EXT[lang] || found === ext) return name;
+  }
+  return `snippet.${ext}`;
+}
+
+function downloadText(filename, text) {
+  const url = URL.createObjectURL(
+    new Blob([text], { type: 'text/plain;charset=utf-8' })
+  );
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Revoked on the next tick — revoking synchronously can cancel the download.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* Wrap each <pre> in a container with copy and download buttons. */
 function decorateCodeBlocks(root) {
   root.querySelectorAll('pre').forEach((pre) => {
     if (pre.parentElement.classList.contains('code-block')) return;
@@ -58,15 +122,32 @@ function decorateCodeBlocks(root) {
     pre.parentNode.insertBefore(wrap, pre);
     wrap.appendChild(pre);
 
+    const bar = document.createElement('div');
+    bar.className = 'code-tools';
+
+    const name = guessFilename(pre, wrap);
+
+    const save = document.createElement('button');
+    save.className = 'code-btn';
+    save.textContent = `Download ${name}`;
+    save.title = `Save this block as ${name}`;
+    save.addEventListener('click', () => {
+      downloadText(name, pre.innerText);
+      save.textContent = 'Saved';
+      setTimeout(() => { save.textContent = `Download ${name}`; }, 1400);
+    });
+
     const btn = document.createElement('button');
-    btn.className = 'code-copy';
+    btn.className = 'code-btn';
     btn.textContent = 'Copy';
     btn.addEventListener('click', () => {
       navigator.clipboard.writeText(pre.innerText);
       btn.textContent = 'Copied';
       setTimeout(() => { btn.textContent = 'Copy'; }, 1400);
     });
-    wrap.appendChild(btn);
+
+    bar.append(save, btn);
+    wrap.appendChild(bar);
   });
 }
 

@@ -1,0 +1,129 @@
+0.00.247.293 I cmn  common_param: common_params_print_info: verbosity = 3 (adjust with the `-lv N` CLI arg)
+0.00.248.404 W srv  llama_server: -----------------
+0.00.248.406 W srv  llama_server: CORS is set to allow all origins ('*') and no API key is set
+0.00.248.406 W srv  llama_server: this can be a security risk (cross-origin attacks)
+0.00.248.406 W srv  llama_server: more info: https://github.com/ggml-org/llama.cpp/pull/25655
+0.00.248.406 W srv  llama_server: -----------------
+0.00.250.981 I srv    load_model: loading model 'models/Qwen3-4B-Q4_K_M.gguf'
+0.00.549.450 W load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+0.01.358.178 I cmn          init: llama threadpool init, n_threads = 4
+0.01.625.986 I srv    load_model: initializing, n_slots = 4, n_ctx_slot = 8192, kv_unified = 'true'
+0.01.648.707 I srv  llama_server: model loaded
+0.01.648.716 I srv  llama_server: listening on http://127.0.0.1:8080
+0.01.648.716 W srv  llama_server: NOTICE: server default port will be changed to :9931 in a future release
+0.01.648.718 W srv  llama_server:         ref: https://github.com/ggml-org/llama.cpp/pull/26508
+0.15.252.036 I slot get_availabl: id  3 | task -1 | selected slot by LRU, t_last = -1
+0.15.253.101 I slot launch_slot_: id  3 | task 0 | processing task, is_child = 0
+0.19.196.797 I slot print_timing: id  3 | task 0 | prompt eval time =     636.54 ms /   113 tokens (    5.63 ms per token,   177.52 tokens per second)
+0.19.196.801 I slot print_timing: id  3 | task 0 |        eval time =    3306.45 ms /    53 tokens (   63.59 ms per token,    15.73 tokens per second)
+0.19.196.801 I slot print_timing: id  3 | task 0 |       total time =    3942.99 ms /   166 tokens
+0.19.196.802 I slot print_timing: id  3 | task 0 |    graphs reused =         52
+0.19.204.855 I slot      release: id  3 | task 0 | stop processing: n_tokens = 165, truncated = 0
+7.37.811.028 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, f_sim_best = 0.884 (> 0.100 thold), f_keep = 0.509
+7.37.811.762 I slot launch_slot_: id  3 | task 54 | processing task, is_child = 0
+7.42.770.313 I slot print_timing: id  3 | task 54 | prompt eval time =    4605.10 ms /    11 tokens (  418.65 ms per token,     2.39 tokens per second)
+7.42.770.315 I slot print_timing: id  3 | task 54 |        eval time =     353.20 ms /    10 tokens (   39.24 ms per token,    25.48 tokens per second)
+7.42.770.316 I slot print_timing: id  3 | task 54 |       total time =    4958.31 ms /    21 tokens
+7.42.770.316 I slot print_timing: id  3 | task 54 |    graphs reused =         60
+7.42.848.722 I slot      release: id  3 | task 54 | stop processing: n_tokens = 104, truncated = 0
+8.05.145.492 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, f_sim_best = 0.784 (> 0.100 thold), f_keep = 0.875
+8.05.149.138 I slot launch_slot_: id  3 | task 65 | processing task, is_child = 0
+8.09.172.554 I slot print_timing: id  3 | task 65 | n_gen =    100, tg =  25.76 t/s, tg_3s =  26.02 t/s
+8.12.197.366 I slot print_timing: id  3 | task 65 | n_gen =    170, tg =  24.61 t/s, tg_3s =  23.14 t/s
+8.15.201.389 I slot print_timing: id  3 | task 65 | n_gen =    242, tg =  24.41 t/s, tg_3s =  23.97 t/s
+8.18.223.938 I slot print_timing: id  3 | task 65 | n_gen =    316, tg =  24.43 t/s, tg_3s =  24.48 t/s
+8.21.231.440 I slot print_timing: id  3 | task 65 | n_gen =    389, tg =  24.40 t/s, tg_3s =  24.27 t/s
+8.23.899.438 I slot print_timing: id  3 | task 65 | prompt eval time =     179.30 ms /    25 tokens (    7.17 ms per token,   139.43 tokens per second)
+8.23.899.441 I slot print_timing: id  3 | task 65 |        eval time =   18570.08 ms /   454 tokens (   40.99 ms per token,    24.39 tokens per second)
+8.23.899.441 I slot print_timing: id  3 | task 65 |       total time =   18749.38 ms /   479 tokens
+8.23.899.441 I slot print_timing: id  3 | task 65 |    graphs reused =        510
+8.23.904.257 I slot      release: id  3 | task 65 | stop processing: n_tokens = 569, truncated = 0
+859.14.448.467 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, f_sim_best = 0.191 (> 0.100 thold), f_keep = 0.197
+859.14.658.434 I slot launch_slot_: id  3 | task 520 | processing task, is_child = 0
+859.23.659.473 I slot print_timing: id  3 | task 520 | n_gen =    100, tg =  28.78 t/s, tg_3s =  29.07 t/s
+859.26.689.529 I slot print_timing: id  3 | task 520 | n_gen =    189, tg =  29.06 t/s, tg_3s =  29.37 t/s
+859.29.702.670 I slot print_timing: id  3 | task 520 | n_gen =    271, tg =  28.47 t/s, tg_3s =  27.21 t/s
+859.32.713.063 I slot print_timing: id  3 | task 520 | n_gen =    355, tg =  28.33 t/s, tg_3s =  27.90 t/s
+859.35.719.719 I slot print_timing: id  3 | task 520 | n_gen =    441, tg =  28.39 t/s, tg_3s =  28.60 t/s
+859.35.754.011 I slot print_timing: id  3 | task 520 | prompt eval time =    5560.39 ms /   473 tokens (   11.76 ms per token,    85.07 tokens per second)
+859.35.754.012 I slot print_timing: id  3 | task 520 |        eval time =   15534.90 ms /   442 tokens (   35.23 ms per token,    28.39 tokens per second)
+859.35.754.013 I slot print_timing: id  3 | task 520 |       total time =   21095.30 ms /   915 tokens
+859.35.754.013 I slot print_timing: id  3 | task 520 |    graphs reused =        948
+859.35.772.500 I slot      release: id  3 | task 520 | stop processing: n_tokens = 1026, truncated = 0
+859.48.887.057 I slot get_availabl: id  3 | task -1 | selected slot by LCP similarity, f_sim_best = 0.557 (> 0.100 thold), f_keep = 0.566
+859.48.888.178 I slot launch_slot_: id  3 | task 963 | processing task, is_child = 0
+859.52.836.975 I slot print_timing: id  3 | task 963 | prompt eval time =    1452.69 ms /   462 tokens (    3.14 ms per token,   318.03 tokens per second)
+859.52.836.976 I slot print_timing: id  3 | task 963 |        eval time =    2495.97 ms /    73 tokens (   34.67 ms per token,    28.85 tokens per second)
+859.52.836.977 I slot print_timing: id  3 | task 963 |       total time =    3948.66 ms /   535 tokens
+859.52.836.977 I slot print_timing: id  3 | task 963 |    graphs reused =       1019
+859.52.837.627 I slot      release: id  3 | task 963 | stop processing: n_tokens = 1115, truncated = 0
+2926.33.509.360 I slot get_availabl: id  2 | task -1 | selected slot by LRU, t_last = -1
+2926.33.510.379 I slot launch_slot_: id  2 | task 1037 | processing task, is_child = 0
+2926.34.194.929 E srv    send_error: task id = 1037, error: request (12670 tokens) exceeds the available context size (8192 tokens), try increasing it
+2926.34.194.939 I slot      release: id  2 | task 1037 | stop processing: n_tokens = 0, truncated = 0
+2926.34.194.949 W srv          stop: cancel task, id_task = 1037
+2930.23.577.538 I slot get_availabl: id  1 | task -1 | selected slot by LRU, t_last = -1
+2930.23.578.538 I slot launch_slot_: id  1 | task 1040 | processing task, is_child = 0
+2930.23.579.171 E srv    send_error: task id = 1040, error: request (12676 tokens) exceeds the available context size (8192 tokens), try increasing it
+2930.23.579.175 I slot      release: id  1 | task 1040 | stop processing: n_tokens = 0, truncated = 0
+2930.23.579.182 W srv          stop: cancel task, id_task = 1040
+3035.28.731.032 I slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = -1
+3035.29.550.440 I slot launch_slot_: id  0 | task 1043 | processing task, is_child = 0
+3035.37.359.582 I slot print_timing: id  0 | task 1043 | n_gen =    100, tg =  20.83 t/s, tg_3s =  21.04 t/s
+3035.40.380.598 I slot print_timing: id  0 | task 1043 | n_gen =    181, tg =  23.16 t/s, tg_3s =  26.81 t/s
+3035.43.400.194 I slot print_timing: id  0 | task 1043 | n_gen =    264, tg =  24.37 t/s, tg_3s =  27.49 t/s
+3035.45.575.187 I slot print_timing: id  0 | task 1043 | prompt eval time =    3056.92 ms /    86 tokens (   35.55 ms per token,    28.13 tokens per second)
+3035.45.575.190 I slot print_timing: id  0 | task 1043 |        eval time =   12967.35 ms /   320 tokens (   40.65 ms per token,    24.60 tokens per second)
+3035.45.575.190 I slot print_timing: id  0 | task 1043 |       total time =   16024.27 ms /   406 tokens
+3035.45.575.191 I slot print_timing: id  0 | task 1043 |    graphs reused =       1336
+3035.45.588.936 I slot      release: id  0 | task 1043 | stop processing: n_tokens = 1444, truncated = 0
+3037.58.945.020 I slot get_availabl: id  3 | task -1 | selected slot by LRU, t_last = 7876632972502
+3037.58.946.187 I slot launch_slot_: id  3 | task 1364 | processing task, is_child = 0
+3037.58.996.561 E srv    send_error: task id = 1364, error: request (9376 tokens) exceeds the available context size (8192 tokens), try increasing it
+3037.58.996.567 I slot      release: id  3 | task 1364 | stop processing: n_tokens = 0, truncated = 0
+3037.58.996.581 W srv          stop: cancel task, id_task = 1364
+5831.14.808.815 I slot get_availabl: id  2 | task -1 | selected slot by LRU, t_last = 8000634329813
+5831.14.811.362 I slot launch_slot_: id  2 | task 1367 | processing task, is_child = 0
+5831.19.229.075 I slot print_timing: id  2 | task 1367 | prompt eval time =    3719.35 ms /     9 tokens (  413.26 ms per token,     2.42 tokens per second)
+5831.19.229.078 I slot print_timing: id  2 | task 1367 |        eval time =     698.16 ms /    20 tokens (   36.75 ms per token,    27.21 tokens per second)
+5831.19.229.078 I slot print_timing: id  2 | task 1367 |       total time =    4417.51 ms /    29 tokens
+5831.19.229.079 I slot print_timing: id  2 | task 1367 |    graphs reused =       1354
+5831.19.229.715 I slot      release: id  2 | task 1367 | stop processing: n_tokens = 28, truncated = 0
+Received second interrupt, terminating immediately.
+Received second interrupt, terminating immediately.
+Received second interrupt, terminating immediately.
+Received second interrupt, terminating immediately.
+src/ggml-metal/ggml-metal-device.m:657: GGML_ASSERT([rsets->data count] == 0) failed
+WARNING: Using native backtrace. Set GGML_BACKTRACE_LLDB for more info.
+WARNING: GGML_BACKTRACE_LLDB may cause native MacOS Terminal.app to crash.
+See: https://github.com/ggml-org/llama.cpp/pull/17869
+WARNING: Using native backtrace. Set GGML_BACKTRACE_LLDB for more info.
+WARNING: GGML_BACKTRACE_LLDB may cause native MacOS Terminal.app to crash.
+See: https://github.com/ggml-org/llama.cpp/pull/17869
+0   libggml-base.0.21.0.dylib           0x0000000100801818 ggml_print_backtrace + 276
+1   libggml-base.0.21.0.dylib           0x0000000100844678 ggml_abort + 156
+0   libggml-base.0.21.0.dylib           0x0000000100801818 ggml_print_backtrace + 276
+1   libggml-base.0.21.0.dylib           0x00000001008115d0 _ZL23ggml_uncaught_exceptionv + 12
+2   libc++abi.dylib                     0x00000001871a6c2c _ZSt11__terminatePFvvE + 16
+3   libc++abi.dylib                     0x00000001871a6b88 _ZSt9terminatev + 36
+2   libggml-metal.so                    0x0000000100bbdb5c ggml_metal_device_init + 0
+3   libggml-metal.so                    0x0000000100bbe230 ggml_metal_device_free + 24
+4   libggml-metal.so                    0x0000000100bc60bc _ZNSt3__110unique_ptrI17ggml_metal_device25ggml_metal_device_deleterE5resetB9nqe210106EPS1_ + 28
+5   libggml-metal.so                    0x0000000100bbfa8c _ZNSt3__16vectorINS_10unique_ptrI17ggml_metal_device25ggml_metal_device_deleterEENS_9allocatorIS4_EEED1B9nqe210106Ev + 60
+6   libsystem_c.dylib                   0x00000001870a742c __cxa_finalize_ranges + 480
+7   libsystem_c.dylib                   0x00000001870a71ec exit + 44
+4   libllama-server-impl.dylib          0x000000010123a7d4 _ZN22stream_session_managerD2Ev + 44
+5   libsystem_c.dylib                   0x00000001870a742c __cxa_finalize_ranges + 480
+6   libsystem_c.dylib                   0x00000001870a71ec exit + 44
+8   libllama-server-impl.dylib          0x00000001012d81f4 _ZN8nlohmann16json_abi_v3_12_06detail5lexerINS0_10basic_jsonINS0_11ordered_mapENSt3__16vectorENS5_12basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEbxydSA_NS0_14adl_serializerENS6_IhNSA_IhEEEEvEENS1_22iterator_input_adapterINS5_11__wrap_iterIPKcEEEEE13get_codepointEv.cold.1 + 0
+7   libllama-server-impl.dylib          0x00000001012d81f4 _ZN8nlohmann16json_abi_v3_12_06detail5lexerINS0_10basic_jsonINS0_11ordered_mapENSt3__16vectorENS5_12basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEEbxydSA_NS0_14adl_serializerENS6_IhNSA_IhEEEEvEENS1_22iterator_input_adapterINS5_11__wrap_iterIPKcEEEEE13get_codepointEv.cold.1 + 0
+9   libllama-server-impl.dylib          0x000000010116d8e8 _ZL14signal_handleri + 80
+8   libllama-server-impl.dylib          0x000000010116d8e8 _ZL14signal_handleri + 80
+10  libsystem_platform.dylib            0x00000001871fd764 _sigtramp + 56
+9   libsystem_platform.dylib            0x00000001871fd764 _sigtramp + 56
+10  libsystem_pthread.dylib             0x00000001871f40dc _pthread_cond_wait + 984
+11  libllama-server-impl.dylib          0x000000010129b154 _ZN7httplib6Server15listen_internalEv + 336
+12  libllama-server-impl.dylib          0x000000010118a810 _ZNSt3__114__thread_proxyB9nqe210106INS_5tupleIJNS_10unique_ptrINS_15__thread_structENS_14default_deleteIS3_EEEEZN19server_http_context5startEvE3$_0EEEEEPvSA_ + 60
+11  libc++.1.dylib                      0x0000000187124754 _ZNSt3__118condition_variable4waitERNS_11unique_lockINS_5mutexEEE + 32
+13  libsystem_pthread.dylib             0x00000001871f3c08 _pthread_start + 136
+14  libsystem_pthread.dylib             0x00000001871eeba8 thread_start + 8

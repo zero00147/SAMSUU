@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Void Runner — 3D Asteroids</title>
+<link rel="stylesheet" href="./css/style.css">
+
+<!-- Native import map: no bundler, no build step, and three.js is served from our own
+     vendor/ directory so the game runs with the network unplugged. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.min.js"
+  }
+}
+</script>
+
+<!-- Classic (non-deferred) script so its error handlers are installed before any module
+     is evaluated. Inert unless the URL contains ?debug -->
+<script src="./js/devlog.js"></script>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<!-- HUD ------------------------------------------------------------------ -->
+<div id="hud" hidden>
+  <div class="hud-left">
+    <div class="hud-block">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="hud-score">0</span>
+    </div>
+    <div class="hud-block">
+      <span class="hud-label">Hull</span>
+      <span class="hud-pips" id="hud-hull"></span>
+    </div>
+  </div>
+  <div class="hud-right">
+    <div class="hud-block align-right">
+      <span class="hud-label">Sector</span>
+      <span class="hud-value small" id="hud-level">1 · Belt Patrol</span>
+    </div>
+    <div class="hud-block align-right">
+      <span class="hud-label">Contacts</span>
+      <span class="hud-value small" id="hud-contacts">0</span>
+    </div>
+    <button id="btn-mute" class="icon-btn" title="Mute (M)">♪</button>
+  </div>
+</div>
+
+<!-- Centre overlay: pause, level clear, game over -------------------------- -->
+<div id="overlay" hidden>
+  <div class="panel">
+    <h2 id="ov-title">Paused</h2>
+    <p id="ov-body"></p>
+    <div id="ov-actions"></div>
+  </div>
+</div>
+
+<!-- Main menu / hangar ---------------------------------------------------- -->
+<div id="menu">
+  <header>
+    <h1>Void <span>Runner</span></h1>
+    <p class="sub">Three sectors. Five hulls. No respawns.</p>
+  </header>
+
+  <div id="ships" class="ships"></div>
+
+  <section class="detail">
+    <div class="detail-head">
+      <h3 id="ship-name">Falcon</h3>
+      <p id="ship-tagline">Balanced patrol interceptor</p>
+    </div>
+    <div class="stats" id="ship-stats"></div>
+    <p class="notes" id="ship-notes"></p>
+  </section>
+
+  <button id="btn-launch">Launch</button>
+
+  <footer class="controls">
+    <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd> turn</span>
+    <span><kbd>&uarr;</kbd> or <kbd>W</kbd> thrust</span>
+    <span><kbd>Space</kbd> fire</span>
+    <span><kbd>P</kbd> pause</span>
+    <span><kbd>M</kbd> mute</span>
+  </footer>
+</div>
+
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>

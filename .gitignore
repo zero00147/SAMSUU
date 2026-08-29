@@ -6,3 +6,6 @@ __pycache__/
 *.db
 *.log
 .DS_Store
+
+# Telegram bot token — never commit this
+.env
