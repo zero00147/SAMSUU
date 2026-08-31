@@ -80,8 +80,16 @@ on this machine:
 
 | Prompt | Thinking | Result |
 |--------|----------|--------|
-| "What is 17 × 23?" | on | burned all 400 max_tokens reasoning, returned **empty content** |
-| same | off | `17 * 23 = 391` in **0.9 s** |
+| "What is 17 × 23?" | on, 400 max_tokens | burned the whole budget reasoning, returned **empty content** |
+| same | on, 1024 max_tokens | `391` — correct — in **14.7 s** |
+| same | off | `321` — **wrong**, 0 of 5 runs correct — in **0.1–0.6 s** |
+
+**Corrected 2026-08-30 by testing.** This table previously claimed `391` in 0.9 s with
+thinking off, and cited that as evidence the default was safe. It does not reproduce: the
+model answers 321 consistently, not randomly, so re-running will not rescue it. The latency
+argument for the default still holds — roughly fifty times faster — but the cost is that
+**arithmetic is unreliable in the default configuration, and confidently so.** Turn Think on
+for anything numeric.
 
 At ~16 tok/s that is the difference between a usable and an unusable app. It is switched
 via `chat_template_kwargs: {"enable_thinking": bool}` on the request — `config.json` sets
@@ -151,7 +159,8 @@ llama-server's `/tokenize` (see `server/tokens.py`). Verified with a 24,191-toke
 against an 8,192 window — trimmed to 5,602 tokens and completed, where it previously
 failed permanently.
 
-Budget is `n_ctx − max_tokens − 256`, i.e. **5,888 tokens** at current settings. The margin
+Budget is `n_ctx − max_tokens − 256`, i.e. **4,864 tokens** at current settings
+(`max_tokens` was raised 2048 → 3072 later; this figure said 5,888 until testing caught it). The margin
 covers chat-template scaffolding that `/tokenize` on raw content doesn't count.
 
 Edge case handled: if the newest turn *alone* exceeds the budget, its tail is kept with a
@@ -175,7 +184,7 @@ was a SIGINT shutdown artefact (see below).
 
 ## Documents: why sections, not RAG (2026-08-27)
 
-The driving use case is feeding a 12,518-token PRD to a model with 5,888 tokens of usable
+The driving use case is feeding a 12,516-token PRD to a model with 4,864 tokens of usable
 prompt space. **The document is 2× the window — it cannot be attached whole at any
 context size this machine can afford** (32K ctx would need ~4.8 GB, and there were 69 MB
 of free RAM at the time of measurement).
@@ -391,6 +400,99 @@ ship flying in the direction it points (the +Y nose convention is correct as bui
 - **`scene.remove()` does not free GPU buffers.** Everything culled goes through `disposeTree`.
   Shared geometry (the one `BULLET_GEO` every shot uses) is tagged `userData.shared` and
   skipped — disposing it with the first spent bullet breaks every shot after it.
+
+## Phase 3 — Voice and requirement clarification (2026-08-31)
+
+### Why the clarification loop exists
+
+A 4B model handed "add dark mode" does not ask what dark mode means here. It picks an
+interpretation and builds it, and the interpretation is plausible often enough that you
+only find out it was wrong after the files are written. `/spec` puts a gate in front of the
+agent: gather the requirement, agree it, *then* build.
+
+### The model cannot be asked whether it has enough information
+
+This is the finding the whole design rests on. Asked directly about "add dark mode", it
+returned `"ready": true` **in the same response as a question it still needed answered.**
+
+So control flow was taken away from it. `clarify.py` walks a fixed five-dimension checklist
+(scope → trigger → behaviour → data → acceptance); the **code** picks the next unsettled
+dimension and decides when to stop. The model is used only for the two things it is
+actually good at: judging a plain-English answer, and phrasing a question.
+
+### Coverage claims must quote the user
+
+First attempt let the model report which dimensions the opening request already covered.
+It marked **all five** covered by the nine words *"I want people to be able to save a chat
+as a file"* — and asked nothing at all. Instructing it to "be strict" did not help.
+
+Fix: a claim must carry the exact words that support it, and `_verified()` checks the quote
+really occurs in what the user said. A model cannot fabricate past a literal containment
+test. **But note where this works and where it does not:**
+
+- On the *opening request* it works — invented quotes get rejected.
+- On an *answer* it is worthless. The model is quoting the reply back, so any quote it
+  offers is trivially present. Asked whether one answer also settled four other dimensions,
+  it said yes to all four.
+
+So an answer credits **only the dimension that was asked**. Under-crediting costs one extra
+question; over-crediting is the silent assumption the module exists to prevent.
+
+A quote also proves the words exist, not that they answer the dimension claimed —
+"save a chat as a file" was offered as evidence for *both* scope and acceptance. Hence
+`MAX_PRECOVERED = 2`: the opening request can be credited with at most two dimensions.
+
+### "You decide" is matched in code, not judged by the model
+
+Deferral is the one reply that must never be misread, because a missed deferral does not
+stop the assumption being made — it stops it being *written down*. The model returned
+`deferred: false` for a bare "You decide." on one run and `true` on the next. It is now a
+regex (`_is_deferral`) on replies under 80 characters, with the model consulted only for
+less obvious cases. If deferral is detected and no assumption came back, a second small
+call asks for one specifically.
+
+Deferred questions become **recorded assumptions** in the spec, not requirements. An early
+run let a deferral invent "text, PDF, JSON" formats the user never mentioned, and they
+leaked into In scope — the finalise prompt now forbids restating assumptions as scope.
+
+### Constrained decoding, so there is no JSON to repair
+
+Every call uses llama-server's `response_format: {"type": "json_schema", …}`. Output is
+guaranteed to parse, so there is no repair path and no regex fallback. This needs `--jinja`,
+which is already on.
+
+### Speech: whisper.cpp and opus-tools, not torch and not ffmpeg
+
+- **whisper.cpp**, because `openai-whisper` pulls torch — multiple gigabytes, on a machine
+  with ~4 GB to spare. whisper.cpp is the same shape as the llama.cpp already here: a brew
+  binary, a model file on disk, a subprocess. `ggml-base.en.bin` is 148 MB.
+- **opus-tools**, not ffmpeg, and this is the non-obvious part. Telegram voice notes are
+  always Ogg/Opus. macOS `afconvert` *does* have an Opus codec and *does* list Ogg as a
+  container — but **writing Ogg fails**: `Error: ExtAudioFileWrite failed ('pck?')` at every
+  sample rate tried. Opus in a CAF container encodes fine, which is what proves it is the
+  Ogg muxer and not the codec. `opusenc`/`opusdec` are a few hundred KB and do both
+  directions. `afconvert` is kept only as the decode fallback for m4a/mp3 `audio` uploads.
+- **`say`** for synthesis: built in, no model, no extra RAM, writes WAV directly.
+
+Measured: `say` → Ogg/Opus → whisper base.en round trip is **verbatim in ~1.4 s**.
+
+### Voice is gated before the download, not with everything else
+
+Every other check lives in `_dispatch`. Voice is authorised in `_handle`, *before*
+`getFile`, because transcription costs real CPU on a shared 8 GB machine and anyone who
+finds the bot can send it audio. A stranger must not be able to make it fetch and decode a
+file at all.
+
+The transcript is always echoed back before it is acted on. A misheard feature request
+produces a confidently wrong clarifying question, and there is no other way to tell that is
+what happened.
+
+### Gotcha: `_ensure_chat` trusted a stale account dict
+
+It read `account["chat_id"]`, but a clarification turn calls it more than once and the
+caller's copy still says `None` after the first call created the chat. Result: **two
+near-identical 📱 chats per spec session.** It now reads the binding back from the database.
+`_converse` never showed this because it only calls `_ensure_chat` once per turn.
 
 ## Open questions / deferred
 

@@ -14,6 +14,7 @@ Map of every file in the project. Update whenever a file is added or its role ch
 | `requirements.txt` | fastapi, uvicorn[standard], httpx, huggingface_hub |
 | `model_link.txt` | Source model URL + note on why the GGUF build is used instead |
 | `DEMO.md` | 12-minute demo script: game, bot auth, authorisation, concurrency. Rehearsed timings |
+| `tests/` | `run_tests.py` (groups A–E, G–I) and `run_api_tests.py` (group F). Results to JSON |
 | `memory.md` | Durable decisions, reasoning, RAM budget, gotchas — read first when resuming |
 | `progress.md` | Terse timestamped milestone log, newest at top |
 | `project_index.md` | This file |
@@ -32,6 +33,8 @@ Map of every file in the project. Update whenever a file is added or its role ch
 | `cli.py` | Terminal REPL + its own sync agent loop. **Not yet migrated onto `agent.py`** | `main`, `chat`, `run_tools`, `confirm`, `trim`, `Spinner`, `ask_for_dir` |
 | `agent.py` | **Async tool loop, frontend-agnostic.** Emits events instead of printing | `run_agent` (async generator), `complete`, `trim`, `_execute`, `GENERATION_LOCK`, `Truncated` |
 | `auth.py` | **Telegram authn/authz.** Pairing codes, roles, audit log | `new_code`, `redeem`, `may_use_tools`, `may_administer`, `is_authenticated`, `set_role`, `set_workspace`, `audit` |
+| `voice.py` | **Speech in and out**, all local subprocesses: opusdec → whisper.cpp, and `say` → opusenc | `transcribe`, `synthesize`, `speakable`, `status`, `available`, `VoiceError` |
+| `clarify.py` | **Requirement clarification.** Walks a fixed checklist, asks about what is missing, writes the spec | `ClarifySession` (`begin`, `answer`, `render_spec`, `build_prompt`), `CHECKLIST`, `_verified`, `_is_deferral` |
 | `telegram.py` | Bot: long polling, dispatch, commands, progress rendering | `TelegramBot` (`run`, `_dispatch`, `_command`, `_converse`), `Session`, `start`, `load_token`, `chunk` |
 | `main.py` | Routes, SSE generation, static mount, **starts the bot in lifespan** | `api_send` (the streaming endpoint), `api_truncate`, `_auto_title`, `_sse` |
 
@@ -59,6 +62,24 @@ the bot edits one Telegram message with them.
 
 Roles: `owner` (tools + admin) · `user` (chat only) · `blocked` (silence) · `pending`.
 File tools need role `owner` **and** a bound workspace — see `may_use_tools`.
+
+### Clarification checklist (`server/clarify.py`)
+
+Questions are asked in this order, skipping whatever the request already settled. The
+**code** picks the next unsettled dimension; the model only judges answers and writes the
+question. Its own readiness judgment is not trusted — see `memory.md`.
+
+| Dimension | Settles |
+|---|---|
+| `scope` | exactly what changes, and what deliberately does not |
+| `trigger` | who uses it and how they reach it |
+| `behaviour` | what happens step by step, including edge cases |
+| `data` | what is stored or remembered, and where |
+| `acceptance` | how we will know it is finished |
+
+A dimension leaves the list either answered or **deferred** — deferral records an explicit
+assumption in the spec rather than deciding silently. Bot commands: `/spec`, `/build`,
+`/cancel`, `/voice`.
 
 ### Routes (`server/main.py`)
 
@@ -139,6 +160,7 @@ Ship models point along **+Y** in local space; the engine sets `rotation.z`, so 
 | Path | Contents |
 |------|----------|
 | `models/Qwen3-4B-Q4_K_M.gguf` | 2.5 GB quantized model |
+| `models/ggml-base.en.bin` | 148 MB whisper.cpp speech model |
 | `data/chats.db` | SQLite: `chats` + `messages` |
 | `.venv/` | Python 3.13 virtualenv |
 

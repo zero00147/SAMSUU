@@ -164,8 +164,12 @@ File tools require role `owner` **and** a bound workspace. Either one alone gets
 |---|---|
 | `/pair CODE` | Redeem a pairing code |
 | `/new` | Fresh conversation |
+| `/spec [text]` | Describe a feature; it asks what it still needs, then writes the spec |
+| `/build` | Implement the agreed spec (owner, needs a workspace) |
+| `/cancel` | Drop the spec session |
+| `/voice on\|off` | Spoken replies as voice notes |
 | `/think` | Toggle extended reasoning |
-| `/status` | Model, workspace, role, history size |
+| `/status` | Model, workspace, role, voice, spec session, history size |
 | `/dir <path>` · `/dir off` | Set or drop the workspace (owner) |
 | `/pwd` · `/ls [path]` | Where it's working · list files directly (owner) |
 | `/invite` | Mint a 15-minute conversation-only code (owner) |
@@ -174,6 +178,59 @@ File tools require role `owner` **and** a bound workspace. Either one alone gets
 
 Relative paths in `/dir` resolve against the samsu directory, so `/dir apps/asteroids`
 works from a phone without typing a full path.
+
+### Talking to it
+
+Hold the microphone in Telegram and speak. The voice note is transcribed on this machine
+by whisper.cpp — nothing is sent to a speech service — and the transcript is echoed back
+so you can see what it heard before it acts on it. Replies come back as text *and* as a
+voice note; `/voice off` stops the speaking half.
+
+### Clarifying a feature before building it
+
+Told "add dark mode", a 4B model will not ask what that means here. It picks an
+interpretation silently and builds it, and you find out after the files are written.
+
+`/spec` inverts that. Describe the feature — speak it or type it — and samsu works through
+a fixed checklist of the five things it needs to know, asking about whichever one is still
+missing:
+
+| Dimension | What it settles |
+|---|---|
+| scope | exactly what changes, and what deliberately does not |
+| trigger | who uses it and how they reach it |
+| behaviour | what happens step by step, including edge cases |
+| data | what is stored or remembered, and where |
+| acceptance | how we will know it is finished |
+
+```
+you   🎤 "I want a way to export a conversation so I can share it."
+
+samsu ❓ Clarification 1 of 3 · trigger
+      Who will use the export feature and how will they initiate it?
+      Why I am asking: guessing the trigger risks building it for the wrong user.
+
+you   🎤 "Anyone reading a chat, from a button next to the chat title."
+      …
+
+samsu ✅ Specification agreed after 3 clarifications
+      ## Conversation Export
+      In scope · Out of scope · Acceptance criteria · Clarifications resolved
+```
+
+Answer with **"you decide"** at any point and the question is closed as a recorded
+**assumption** instead of a requirement — written into the spec, so the decision is visible
+rather than silent. That is the whole point: nothing gets assumed without being written down.
+
+Then `/build` hands the agreed specification to the file-tool agent, which implements that
+and nothing else.
+
+The loop is deliberately not left to the model's judgment. Asked directly whether it had
+enough information about "add dark mode", it answered `"ready": true` while writing out a
+question it still needed answered. So the code decides what is missing and when to stop;
+the model only judges answers and phrases questions. See `server/clarify.py`.
+
+Everything appears in the browser sidebar as it happens, in the same `📱 …` chat.
 
 ### Working from both at once
 
@@ -212,6 +269,9 @@ channel back out of the page.
 - **Stop** mid-generation; the partial reply is saved, not discarded
 - **Retry** an answer, **Edit** any earlier message and re-run from that point
 - **Think** toggle — Qwen3's extended reasoning, shown as a collapsible block
+- **Voice** over Telegram — speak to it, hear it back; transcribed locally by whisper.cpp
+- **`/spec`** — it asks what it still needs to know about a feature, then writes the
+  specification, recording anything you left to it as an explicit assumption
 
 ## Prerequisites
 
@@ -224,8 +284,16 @@ Already installed by setup, listed here for rebuilding elsewhere:
 | Python 3.13 | `brew install python@3.13` |
 | venv + deps | `/opt/homebrew/opt/python@3.13/bin/python3.13 -m venv .venv && ./.venv/bin/pip install -r requirements.txt` |
 | Model (2.5 GB) | `./.venv/bin/huggingface-cli download Qwen/Qwen3-4B-GGUF Qwen3-4B-Q4_K_M.gguf --local-dir ./models` |
+| Speech (optional) | `brew install whisper-cpp opus-tools` |
+| Speech model (148 MB) | `./.venv/bin/huggingface-cli download ggerganov/whisper.cpp ggml-base.en.bin --local-dir ./models` |
 
 No Node, no Docker, no build step. After the model download, it runs with networking off.
+
+Speech is optional — without it the bot works exactly as before and says what is missing if
+you send it a voice note. `opus-tools` rather than ffmpeg because Telegram voice notes are
+Ogg/Opus and macOS `afconvert`, which can decode them, fails when asked to *write* the
+format (`ExtAudioFileWrite failed ('pck?')`). Text-to-speech is the built-in `say`, so it
+needs no model and no extra memory.
 
 ## Configuration
 
@@ -235,10 +303,16 @@ Everything tunable lives in `config.json`; restart to apply.
 |-----|---------|-------|
 | `n_ctx` | `8192` | Context window. **Raising this costs ~144 KB/token of RAM** — see `memory.md` |
 | `temperature` | `0.7` | Qwen3's recommended value for non-thinking mode |
-| `max_tokens` | `2048` | Per-reply cap |
+| `max_tokens` | `3072` | Per-reply cap. Usable prompt space is `n_ctx − max_tokens − 256` = **4,864** |
 | `enable_thinking` | `false` | Default for the Think toggle |
 | `auto_approve` | `true` | CLI runs file operations without confirming |
 | `max_tool_rounds` | `40` | Tool calls allowed per turn before it stops |
+| `voice_enabled` | `true` | Master switch for speech in and out |
+| `voice_stt_model` | `models/ggml-base.en.bin` | whisper.cpp model file |
+| `voice_speak_replies` | `true` | Send a voice note alongside each reply |
+| `voice_tts_voice` · `voice_tts_rate` | `Samantha` · `180` | Any voice from `say -v '?'` |
+| `voice_max_seconds` | `180` | Longer recordings are refused before download |
+| `clarify_max_questions` | `4` | Questions a `/spec` session may ask before it writes up |
 | `system_prompt` | … | Also instructs the model to avoid LaTeX |
 
 ## Performance on this machine

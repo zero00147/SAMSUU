@@ -1,7 +1,8 @@
 # Demo script
 
-A ~12 minute walkthrough proving the four claims: the bot works, it is genuinely
-authorised, it runs concurrently with the app, and the game runs.
+A ~16 minute walkthrough proving the five claims: the bot works, it is genuinely
+authorised, it runs concurrently with the app, the game runs, and it clarifies a spoken
+feature request before building anything.
 
 Every timing here was rehearsed on this machine — no step is guessed.
 
@@ -233,6 +234,82 @@ fast to demonstrate concurrency.
 
 ---
 
+## Act 5 — It asks before it builds (4 min)
+
+The point of this act is a **negative** one again: what the assistant refuses to assume.
+
+### Set it up
+
+Nothing to prepare. Check the terminal printed `voice : ggml-base.en.bin in, say out`
+when `./samsu web` started. From the phone:
+
+```
+/spec
+```
+
+### Speak the request — deliberately vague
+
+Hold the microphone and say, in exactly these words:
+
+> "I want a way to export a conversation so I can share it with someone."
+
+| They see | It proves |
+|---|---|
+| `🎧 listening…` then `🎤 heard: "…"` with the timing | Speech recognition ran **on the laptop** — show the terminal, no network |
+| `❓ Clarification 1 of 3 · trigger` | It did not start building. It has a checklist and it is working through it |
+| `Why I am asking: …` under the question | Each question justifies itself |
+| A voice note arrives with the question | Two-way voice, not just dictation |
+
+**The line to say:** "That request is the kind a 4B model will happily act on. It would
+pick a format, pick a button, pick a file layout, and write the files — and every one of
+those is a guess. It has been given a checklist of five things it must know instead, and
+it will not write a specification until it has them."
+
+### Answer two questions by voice
+
+> "Anyone reading a chat, from a button next to the chat title."
+
+> "A markdown file containing every message in order with who said it."
+
+Point at the browser between answers — the `📱 …` chat is filling in live with each
+question and answer.
+
+### Then refuse to answer one
+
+When the third question comes, say:
+
+> "You decide."
+
+**Watch for it in the spec:** the question moves into **Assumptions (you left these to
+me)**, not into the requirements.
+
+**The line to say:** "This is the part I care about. It still has to make a decision — but
+now the decision is written down as an assumption instead of buried in the code. That
+distinction is enforced in the code, not left to the model: it was asked to judge 'you
+decide' and got it wrong on one run out of two, so the phrase is matched with a regex."
+
+### Land it
+
+The specification arrives: goal, in scope, out of scope, acceptance criteria, assumptions,
+and every clarification it was built from. Then:
+
+```
+/build
+```
+
+It implements that specification and nothing else, in the workspace.
+
+**The line to say if asked how it knows when to stop:** "The model does not decide. Asked
+directly whether it had enough information about a feature, it answered 'ready: true' in
+the same breath as a question it still needed answered. So the code walks the checklist and
+the model only judges the answers."
+
+### If you are short on time
+
+Skip `/build` and stop at the specification — that is where the interesting content is.
+
+---
+
 ## Reset between runs
 
 ```bash
@@ -262,6 +339,10 @@ print('/pair', auth.new_code('owner', 60))"
 | Game is blank | Wrong port. It is **:8100**, not :8000 |
 | No sound in the game | Browsers block audio until a real click. Click **Launch**, not just the page |
 | Telegram `Conflict` in terminal | Two processes polling the same bot. `./samsu stop`, then `./samsu web` once |
+| Voice note gets "I cannot transcribe audio yet" | `brew install whisper-cpp opus-tools`, and check `models/ggml-base.en.bin` exists |
+| It mishears a word | The transcript is echoed before it acts — just re-record. Technical nouns are the weak spot |
+| No voice note comes back | `/voice on`. If it still does not, `say` failed — check the terminal for `telegram tts error` |
+| It asks about something you already said | Expected: an answer is credited only to the question asked. One extra question beats a silent assumption |
 
 ---
 
@@ -279,3 +360,8 @@ weakness:
 - **The agent cannot run code.** It writes files but never executes them, so it never sees a
   test fail. Adding a sandboxed `run_command` tool is the single biggest improvement
   available, and the next thing worth building.
+- **Clarification is bounded, not exhaustive.** Five dimensions, at most four questions.
+  It will not find every ambiguity — it guarantees that the ones it does raise are either
+  answered or written down as assumptions.
+- **Speech recognition is `base.en`.** Clear speech transcribes verbatim; technical nouns
+  are where it slips. That is why the transcript is always shown before it is acted on.

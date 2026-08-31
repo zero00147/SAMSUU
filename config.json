@@ -13,5 +13,16 @@
   "auto_approve": true,
   "max_tool_rounds": 40,
   "cli_max_tokens": 3072,
+  "voice_enabled": true,
+  "voice_stt_model": "models/ggml-base.en.bin",
+  "voice_stt_threads": 4,
+  "voice_stt_timeout": 120,
+  "voice_speak_replies": true,
+  "voice_tts_voice": "Samantha",
+  "voice_tts_rate": 180,
+  "voice_max_seconds": 180,
+  "voice_max_bytes": 8000000,
+  "voice_max_spoken_chars": 700,
+  "clarify_max_questions": 4,
   "system_prompt": "You are a helpful, thoughtful assistant. Answer clearly and concisely. Use markdown for structure and fenced code blocks with a language tag for code. Write mathematics in plain text with Unicode symbols (e.g. 60 mph × 1 hour = 60 miles). Never use LaTeX, dollar-sign math delimiters, or commands like \\text{} and \\frac{}."
 }

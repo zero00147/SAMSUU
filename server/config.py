@@ -25,6 +25,22 @@ _DEFAULTS = {
     # whole file inside a JSON string, and running out mid-string produces unparseable
     # arguments that llama-server rejects with a 500.
     "cli_max_tokens": 3072,
+    # Voice, via the Telegram bot. Speech in is whisper.cpp against a local model file;
+    # speech out is macOS `say` encoded to Ogg/Opus. Both are local subprocesses — see
+    # server/voice.py. Set voice_enabled false to switch the whole path off.
+    "voice_enabled": True,
+    "voice_stt_model": "models/ggml-base.en.bin",
+    "voice_stt_threads": 4,
+    "voice_stt_timeout": 120,
+    "voice_speak_replies": True,
+    "voice_tts_voice": "Samantha",
+    "voice_tts_rate": 180,
+    "voice_max_seconds": 180,
+    "voice_max_bytes": 8_000_000,
+    "voice_max_spoken_chars": 700,
+    # How many clarifying questions a spec session may ask before it stops and writes
+    # the specification with whatever it has. See server/clarify.py.
+    "clarify_max_questions": 4,
     "system_prompt": "You are a helpful, thoughtful assistant.",
 }
 

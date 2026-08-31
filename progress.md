@@ -2,6 +2,15 @@
 
 <!-- newest at top, one line per milestone: YYYY-MM-DD HH:MM — what changed -->
 
+2026-08-31 22:58 — voice tests added (group I, 12 cases); full suite 81 cases, 77 pass
+2026-08-31 22:52 — fixed: spec session created TWO 📱 chats (stale account.chat_id in _ensure_chat)
+2026-08-31 22:46 — deferral ("you decide") now matched in code — model returned deferred=false on it
+2026-08-31 22:40 — coverage claims must quote the user; model had marked all 5 dimensions covered by 9 words
+2026-08-31 22:34 — /spec clarification loop working end to end: 3 questions → agreed spec, mirrored to 📱 chat
+2026-08-31 22:26 — server/clarify.py + server/voice.py added; bot handles voice notes and speaks replies
+2026-08-31 22:19 — voice pipeline verified: say → opus → whisper base.en, verbatim, 1.4s round trip
+2026-08-31 22:12 — whisper-cpp + opus-tools installed; afconvert can decode Opus but not write Ogg
+2026-08-30 02:48 — testing report written: 86 cases, 82 pass; 2 real defects found in documents.py
 2026-08-30 00:07 — Void Runner confirmed visually by a human: menu, ships, audio, rocks, flight all correct
 2026-08-30 00:02 — LIVE E2E: @rifat_samsu_bot paired → /dir → fixed a real bug in 15s, 2 tool calls
 2026-08-30 00:00 — bot verified end to end on a real phone; mirroring into the web sidebar confirmed
